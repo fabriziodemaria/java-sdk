@@ -1,6 +1,7 @@
 package dev.openfeature.sdk;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 
@@ -27,13 +28,13 @@ class HookSupportTest implements HookFixtures {
         EvaluationContext baseContext = new ImmutableContext(attributes);
         HookContext<String> hookContext = new HookContext<>("flagKey", FlagValueType.STRING, "defaultValue", baseContext, () -> "client", () -> "provider");
         Hook<String> stringHook = new TestStringHook();
-        Hook<Boolean> boolHook = new TestBoolHook();
+        Hook<Object> boolHook = new TestBoolHook();
         HookSupport hookSupport = new HookSupport();
 
         EvaluationContext result = hookSupport.beforeHooks(FlagValueType.STRING, hookContext, Arrays.asList(stringHook, boolHook), Collections.emptyMap());
 
         assertThat(result.getValue("bla").asString()).isEqualTo("defaultValueTest");
-//        assertTrue(result.getValue("foo").asBoolean()); ???
+        assertTrue(result.getValue("foo").asBoolean());
         assertThat(result.getValue("baseKey").asString()).isEqualTo("baseValue");
     }
 
@@ -49,13 +50,13 @@ class HookSupportTest implements HookFixtures {
         }
     }
 
-    static class TestBoolHook implements Hook<Boolean> {
+    static class TestBoolHook implements Hook<Object> {
         @Override
-        public Optional<EvaluationContext> before(HookContext<Boolean> ctx,
+        public Optional<EvaluationContext> before(HookContext<Object> ctx,
             Map<String, Object> hints) {
-            Boolean dv = ctx.getDefaultValue();
+            String dv = (String) ctx.getDefaultValue();
             Map<String, Value> attributes = new HashMap<>();
-            attributes.put("foo", new Value(dv));
+            attributes.put("foo", new Value("defaultValue".equals(dv)));
             EvaluationContext baseContext = new ImmutableContext(attributes);
             return Optional.of(baseContext);
         }
